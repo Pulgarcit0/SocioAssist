@@ -2,6 +2,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Permisos base para servicios en primer plano -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /> <!-- Para dibujar sobre otras apps -->
+
+    <!-- Permisos específicos para captura de pantalla (OCR) y uso en segundo plano -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -11,6 +19,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.SocioAssist">
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -19,10 +28,27 @@
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Servicio flotante para mostrar la interfaz sobrepesta -->
+        <service
+            android:name=".core.FloatingService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection|specialUse" />
+
+        <!-- Servicio encargado del procesamiento (OCR / Lógica) -->
+        <service
+            android:name=".feature.asistente.MotoAssistService"
+            android:foregroundServiceType="mediaProjection"
+            android:exported="false" />
+
+        <!-- Configuración de ML Kit para lectura de texto en pantalla -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="ocr" />
+
     </application>
 
 </manifest>
