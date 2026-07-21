@@ -30,7 +30,7 @@ package com.valentin.socioassist.ui.overlay
     fun FloatingOverlay(
         tripData: TripData?,
         onDrag: (Float, Float) -> Unit,
-        onClose: () -> Unit // <-- Parámetro para cerrar
+        onClose: () -> Unit 
     ) {
         Box(
             modifier = Modifier.pointerInput(Unit) {
@@ -41,9 +41,9 @@ package com.valentin.socioassist.ui.overlay
             }
         ) {
             if (tripData != null) {
-                MotoAssistCard(
+                SocioAssistCard(
                     tripData = tripData,
-                    onClose = onClose // <-- Se lo pasamos a la tarjeta
+                    onClose = onClose 
                 )
             } else {
                 WaitingTripCard()
@@ -53,59 +53,59 @@ package com.valentin.socioassist.ui.overlay
 
     @Composable
     fun WaitingTripCard() {
-        // 1. Estado para saber si el viaje está tardando
+        
         var estaAburrido by remember { mutableStateOf(false) }
 
-        // 2. Temporizador de 1 minuto
+        
         LaunchedEffect(Unit) {
             delay(60000L.milliseconds)
             estaAburrido = true
         }
 
-        // ==========================================
-        // 3. ANIMACIÓN AVANZADA DEL GUSANITO
-        // ==========================================
+        
+        
+        
         val infiniteTransition = rememberInfiniteTransition(label = "animacion_gusano")
 
-        // Creamos un ciclo que va de 0f a 2f (1 segundo de ida, 1 segundo de vuelta)
+        
         val progreso by infiniteTransition.animateFloat(
             initialValue = 0f,
             targetValue = 2f,
             animationSpec = infiniteRepeatable(
                 animation = tween(durationMillis = 2000, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart // Reinicia porque nosotros controlaremos la reversa
+                repeatMode = RepeatMode.Restart 
             ),
             label = "progreso_ciclo"
         )
 
-        // Calculamos si está en el viaje de ida (hacia la derecha) o de regreso
+        
         val vaHaciaLaDerecha = progreso <= 1f
 
-        // Calculamos la posición en X (horizontal)
+        
         val desplazamientoX = if (vaHaciaLaDerecha) {
-            (progreso * 16f) - 8f // Va de -8 a 8
+            (progreso * 16f) - 8f 
         } else {
-            8f - ((progreso - 1f) * 16f) // Regresa de 8 a -8
+            8f - ((progreso - 1f) * 16f) 
         }
 
-        // Calculamos la posición en Y (ondulado / saltitos) usando función Seno
-        // Multiplicado por 6 significa que dará 3 "saltitos" de ida y 3 de vuelta.
-        // Multiplicado por -3f define la altura del salto en píxeles (hacia arriba).
+        
+        
+        
         val desplazamientoY = (sin(progreso * PI * 6).toFloat()) * -3f
 
-        // Volteamos el emoji.
-        // OJO: El emoji original "🐛" por defecto mira hacia la izquierda.
-        // Si va a la derecha, lo volteamos (-1f). Si va a la izquierda, lo dejamos normal (1f).
+        
+        
+        
         val escalaX = if (vaHaciaLaDerecha) -1f else 1f
 
-        // 4. Elegimos el emoji
+        
         val emojiFlotante = if (estaAburrido) "🐛" else "🍏"
 
-        // 5. Aplicamos el movimiento y el volteo SOLO si está aburrido
+        
         val modifierEmoji = if (estaAburrido) {
             Modifier
                 .offset(x = desplazamientoX.dp, y = desplazamientoY.dp)
-                .graphicsLayer(scaleX = escalaX) // ¡Esto es lo que hace que se voltee!
+                .graphicsLayer(scaleX = escalaX) 
         } else {
             Modifier
         }
@@ -132,15 +132,15 @@ package com.valentin.socioassist.ui.overlay
     }
     
     @Composable
-    fun MotoAssistCard(tripData: TripData, onClose: () -> Unit) {
-        // Lógica dinámica para los estados (Semáforo)
+    fun SocioAssistCard(tripData: TripData, onClose: () -> Unit) {
+        
         val (badgeColor, actionColor, iconRes) = when(tripData.nivelRentabilidad) {
-            NivelRentabilidad.ALTA -> Triple(Color(0xFF16A34A), Color(0xFF16A34A), Icons.Default.CheckBox) // Verde
-            NivelRentabilidad.MEDIA -> Triple(Color(0xFFD97706), Color(0xFFD97706), Icons.Default.Warning) // Naranja
-            NivelRentabilidad.BAJA, NivelRentabilidad.RECHAZAR -> Triple(Color(0xFFDC2626), Color(0xFFDC2626), Icons.Default.Cancel) // Rojo
+            NivelRentabilidad.ALTA -> Triple(Color(0xFF16A34A), Color(0xFF16A34A), Icons.Default.CheckBox) 
+            NivelRentabilidad.MEDIA -> Triple(Color(0xFFD97706), Color(0xFFD97706), Icons.Default.Warning) 
+            NivelRentabilidad.BAJA, NivelRentabilidad.RECHAZAR -> Triple(Color(0xFFDC2626), Color(0xFFDC2626), Icons.Default.Cancel) 
         }
     
-        // Colores base extraídos de tu XML
+        
         val cardBackground = Color(0xFFFFFFFF)
         val headerBackground = Color(0xFFF8F9FA)
         val iconBlue = Color(0xFF0052CC)
@@ -158,7 +158,7 @@ package com.valentin.socioassist.ui.overlay
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
     
-                // ================= HEADER COMPACTO =================
+                
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -173,7 +173,7 @@ package com.valentin.socioassist.ui.overlay
                         modifier = Modifier.size(14.dp)
                     )
                     Text(
-                        text = "MotoAssist",
+                        text = "SocioAssist",
                         color = textPrimary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
@@ -182,7 +182,7 @@ package com.valentin.socioassist.ui.overlay
     
                     Spacer(modifier = Modifier.weight(1f))
     
-                    // Badge de Rentabilidad
+                    
                     Card(
                         shape = RoundedCornerShape(6.dp),
                         colors = CardDefaults.cardColors(containerColor = badgeColor)
@@ -207,7 +207,7 @@ package com.valentin.socioassist.ui.overlay
                         }
                     }
     
-                    // NUEVO: Botón de "X" para cerrar
+                    
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(
                         imageVector = Icons.Default.Close,
@@ -216,12 +216,12 @@ package com.valentin.socioassist.ui.overlay
                         modifier = Modifier
                             .size(18.dp)
                             .clickable {
-                                onClose() // ¡AHORA SÍ, ESTÁ PERFECTO!
+                                onClose() 
                             }
                     )
                 }
     
-                // ================= CONTENIDO PRINCIPAL =================
+                
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -248,18 +248,18 @@ package com.valentin.socioassist.ui.overlay
                         color = dividerColor
                     )
     
-                    // LAS 3 COLUMNAS (Rentabilidad | Tiempo | Total)
+                    
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // 1. Columna Rentabilidad
+                        
                         Column(
                             modifier = Modifier.weight(1f),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Sort, // <-- ÍCONO ACTUALIZADO
+                                imageVector = Icons.AutoMirrored.Filled.Sort, 
                                 contentDescription = "Rentabilidad Icon",
                                 tint = iconBlue,
                                 modifier = Modifier.size(16.dp)
@@ -277,7 +277,7 @@ package com.valentin.socioassist.ui.overlay
                             )
                         }
     
-                        // Divisor Vertical 1
+                        
                         Box(
                             modifier = Modifier
                                 .width(1.dp)
@@ -285,7 +285,7 @@ package com.valentin.socioassist.ui.overlay
                                 .background(dividerColor)
                         )
     
-                        // 2. Columna Tiempo (Minutos)
+                        
                         Column(
                             modifier = Modifier.weight(1f),
                             horizontalAlignment = Alignment.CenterHorizontally
@@ -309,7 +309,7 @@ package com.valentin.socioassist.ui.overlay
                             )
                         }
     
-                        // Divisor Vertical 2
+                        
                         Box(
                             modifier = Modifier
                                 .width(1.dp)
@@ -317,7 +317,7 @@ package com.valentin.socioassist.ui.overlay
                                 .background(dividerColor)
                         )
     
-                        // 3. Columna Recogida (Total Distancia)
+                        
                         Column(
                             modifier = Modifier.weight(1f),
                             horizontalAlignment = Alignment.CenterHorizontally
@@ -348,7 +348,7 @@ package com.valentin.socioassist.ui.overlay
                         color = dividerColor
                     )
     
-                    // ZONA DE DECISIÓN
+                    
                     Row(
                         modifier = Modifier.padding(bottom = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -368,7 +368,7 @@ package com.valentin.socioassist.ui.overlay
                         )
                     }
     
-                    // Motivo (Solo se muestra si es advertencia o rechazo)
+                    
                     if (tripData.nivelRentabilidad == NivelRentabilidad.BAJA || tripData.nivelRentabilidad == NivelRentabilidad.RECHAZAR) {
                         Text(
                             text = "El pago por kilómetro no es conveniente",
@@ -378,7 +378,7 @@ package com.valentin.socioassist.ui.overlay
                     }
                 }
     
-                // ================= LÍNEA DE PROGRESO INFERIOR =================
+                
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()

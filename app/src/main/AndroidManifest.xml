@@ -9,6 +9,8 @@
     <!-- Permisos específicos para captura de pantalla (OCR) y uso en segundo plano -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:allowBackup="true"
@@ -32,15 +34,27 @@
             </intent-filter>
         </activity>
 
-        <!-- Servicio flotante para mostrar la interfaz sobrepesta -->
+        <!-- Servicio flotante para mostrar la interfaz sobrepuesta -->
         <service
             android:name=".core.FloatingService"
+            android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="mediaProjection|specialUse" />
 
+        <!-- Servicio para escuchar las notificaciones de Uber/DiDi -->
+        <service
+            android:name=".core.MotoAssistNotificationListener"
+            android:label="MotoAssist Despertador"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
         <!-- Servicio encargado del procesamiento (OCR / Lógica) -->
         <service
-            android:name=".feature.asistente.MotoAssistService"
+            android:name=".feature.asistente.SocioAssistService"
             android:foregroundServiceType="mediaProjection"
             android:exported="false" />
 

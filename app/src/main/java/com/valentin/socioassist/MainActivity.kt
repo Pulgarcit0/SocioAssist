@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.valentin.socioassist.ui.MotoAssistApp
+import com.valentin.socioassist.ui.SocioAssistApp
 import com.valentin.socioassist.ui.theme.AsistenteVirtualTheme
 
 class MainActivity : ComponentActivity() {
@@ -13,8 +13,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             AsistenteVirtualTheme {
-                // Aquí llamamos a la estructura que creamos
-                MotoAssistApp()
+                
+                SocioAssistApp()
             }
         }
     }

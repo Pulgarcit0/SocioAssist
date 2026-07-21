@@ -25,7 +25,7 @@ class VentanaFlotanteManager(private val context: Context) {
 
     fun mostrarOActualizar(tripData: TripData) {
         if (composeView == null) {
-            // 1. Configuramos las reglas físicas de la ventana primero
+            
             val params = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -35,12 +35,12 @@ class VentanaFlotanteManager(private val context: Context) {
                 PixelFormat.TRANSLUCENT
             ).apply {
                 gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-                y = 120 // Margen superior
+                y = 120 
             }
 
-            // 2. Creamos la vista de Compose
+            
             composeView = ComposeView(context).apply {
-                // TRUCO: Ciclo de vida artificial para Compose fuera de una Activity
+                
                 val lifecycleOwner = MyLifecycleOwner()
                 lifecycleOwner.performRestore(null)
                 lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
@@ -55,25 +55,25 @@ class VentanaFlotanteManager(private val context: Context) {
                     override val viewModelStore: ViewModelStore get() = viewModelStore
                 })
 
-                // 3. AQUÍ INYECTAMOS TU COMPONENTE DEFINITIVO
+                
                 setContent {
                     FloatingOverlay(
                         tripData = tripData,
                         onDrag = { dragX, dragY ->
-                            // Movemos la ventana física en Android
+                            
                             params.x += dragX.toInt()
                             params.y += dragY.toInt()
                             windowManager.updateViewLayout(this, params)
                         },
                         onClose = {
-                            // Destruimos la ventana
+                            
                             ocultar()
                         }
                     )
                 }
             }
 
-            // 4. Inflamos la ventana
+            
             try {
                 windowManager.addView(composeView, params)
             } catch (e: Exception) {
@@ -81,7 +81,7 @@ class VentanaFlotanteManager(private val context: Context) {
             }
 
         } else {
-            // Si ya existe la ventana en pantalla, solo actualizamos los datos reactivamente
+            
             composeView?.setContent {
                 FloatingOverlay(
                     tripData = tripData,
@@ -106,15 +106,15 @@ class VentanaFlotanteManager(private val context: Context) {
             try {
                 windowManager.removeView(view)
             } catch (e: Exception) {
-                // Ignorar si ya se cerró
+                
             }
             composeView = null
         }
     }
 
-    // =========================================================================
-    // BOILERPLATE: El "Corazón artificial" para que Jetpack Compose lata
-    // =========================================================================
+    
+    
+    
     private class MyLifecycleOwner : SavedStateRegistryOwner {
         private val lifecycleRegistry = LifecycleRegistry(this)
         private val savedStateRegistryController = SavedStateRegistryController.create(this)

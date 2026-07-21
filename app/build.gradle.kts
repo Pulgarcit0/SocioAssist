@@ -13,7 +13,7 @@ android {
 
     defaultConfig {
         applicationId = "com.valentin.socioassist"
-        minSdk = 26 // <--- ¡AQUÍ ESTÁ EL DETALLE! Cámbialo de 23 a 26
+        minSdk = 26 
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
@@ -59,4 +59,5 @@ dependencies {
     implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.0")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("io.coil-kt:coil-compose:2.5.0")
 }

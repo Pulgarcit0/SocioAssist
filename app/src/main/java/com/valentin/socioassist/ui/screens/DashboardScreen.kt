@@ -32,11 +32,11 @@ import com.valentin.socioassist.core.FloatingService
 import com.valentin.socioassist.feature.permisos.PermisosManager
 import com.valentin.socioassist.feature.permisos.rememberScreenCaptureLauncher
 import com.valentin.socioassist.ui.screens.SwitchScreen
+import com.valentin.socioassist.ui.screens.SettingsScreen
 
-// 1. EL MARCO PRINCIPAL (Con el sistema de navegación)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MotoAssistApp() {
+fun SocioAssistApp() {
     val context = LocalContext.current
     val navController = rememberNavController()
     var tabSeleccionada by remember { mutableIntStateOf(0) }
@@ -60,7 +60,7 @@ fun MotoAssistApp() {
         topBar = {
             TopAppBar(
                 title = {
-                    Text("MotoAssist", fontWeight = FontWeight.Bold, color = Color(0xFF0052CC))
+                    Text("SocioAssist", fontWeight = FontWeight.Bold, color = Color(0xFF0052CC))
                 },
                 actions = {
                     IconButton(onClick = { /* Acción de notificaciones */ }) {
@@ -115,7 +115,6 @@ fun MotoAssistApp() {
             modifier = Modifier.padding(paddingValues)
         ) {
             composable("home") {
-                // Le pasamos el estado y la función a la pantalla de Inicio
                 HomeScreen(
                     isServiceRunning = isServiceRunning,
                     onSetServiceRunning = { isServiceRunning = it },
@@ -126,16 +125,11 @@ fun MotoAssistApp() {
                 )
             }
 
-            // ==============================================================
-            // AQUÍ ESTÁ EL BLOQUE ACTUALIZADO EXACTAMENTE EN SU LUGAR
-            // ==============================================================
             composable("switch") {
-                // Le pasamos el estado y la función a la pantalla de Switch para sincronizarlos
                 SwitchScreen(
                     isServiceRunning = isServiceRunning,
                     onSetServiceRunning = { isRunning ->
                         isServiceRunning = isRunning
-                        // Si nos mandan apagar desde el switch, matamos el servicio aquí mismo
                         if (!isRunning) {
                             val intent = Intent(context, FloatingService::class.java)
                             context.stopService(intent)
@@ -147,14 +141,22 @@ fun MotoAssistApp() {
                     }
                 )
             }
-            // ==============================================================
 
-            composable("settings") { SettingsScreen() }
+            composable("settings") {
+                SettingsScreen(
+                    isLoggedIn = false, 
+                    userData = null,
+                    onLogoutClick = {
+                        
+                        Toast.makeText(context, "Cerrando sesión...", Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
         }
     }
 }
 
-// 2. TU PANTALLA PRINCIPAL
+
 @Composable
 fun HomeScreen(
     isServiceRunning: Boolean,
@@ -162,13 +164,26 @@ fun HomeScreen(
     onSolicitarPermiso: () -> Unit
 ) {
     val context = LocalContext.current
-    val sharedPreferences = context.getSharedPreferences("MotoAssistPrefs", Context.MODE_PRIVATE)
+    val sharedPreferences = context.getSharedPreferences("SocioAssistPrefs", Context.MODE_PRIVATE)
 
-    // Cargamos los valores guardados (si no existen, pone los valores por defecto)
     var tarifaMinima by remember { mutableStateOf(sharedPreferences.getFloat("tarifaMin", 25f).toString()) }
     var tarifaImpuesto by remember { mutableStateOf(sharedPreferences.getFloat("impuesto", 10.1f).toString()) }
     var distanciaMaxima by remember { mutableStateOf(sharedPreferences.getFloat("distMax", 12f).toString()) }
-    var gananciaNeta by remember { mutableStateOf(  sharedPreferences.getFloat("ganancia", 7f).toString()) }
+    var gananciaNeta by remember { mutableStateOf(sharedPreferences.getFloat("ganancia", 7f).toString()) }
+
+    
+    var mostrarDialogoPermiso by remember { mutableStateOf(false) }
+
+    
+    if (mostrarDialogoPermiso) {
+        PermissionExplanationDialog(
+            onDismiss = { mostrarDialogoPermiso = false },
+            onConfirm = {
+                mostrarDialogoPermiso = false
+                PermisosManager.solicitarPermisoNotificaciones(context)
+            }
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -178,7 +193,7 @@ fun HomeScreen(
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // --- LA TARJETA DE ESTADO DINÁMICA ---
+        
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -212,15 +227,18 @@ fun HomeScreen(
                 Button(
                     onClick = {
                         if (isServiceRunning) {
-                            // APAGAR EL SERVICIO
                             val intent = Intent(context, FloatingService::class.java)
                             context.stopService(intent)
                             onSetServiceRunning(false)
                             Toast.makeText(context, "Apagado", Toast.LENGTH_SHORT).show()
                         } else {
-                            // ENCENDER EL SERVICIO
                             if (!PermisosManager.tienePermisoSuperposicion(context)) {
                                 PermisosManager.solicitarPermisoSuperposicion(context)
+                            } else if (!PermisosManager.tienePermisoBateria(context)) {
+                                PermisosManager.solicitarPermisoBateria(context)
+                                Toast.makeText(context, "Acepta ignorar la optimización de batería", Toast.LENGTH_LONG).show()
+                            } else if (!PermisosManager.tienePermisoNotificaciones(context)) {
+                                mostrarDialogoPermiso = true
                             } else {
                                 onSolicitarPermiso()
                             }
@@ -245,7 +263,6 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // --- CONFIGURACIONES DEL FILTRO ---
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -345,17 +362,10 @@ fun HomeScreen(
     }
 }
 
-// 3. PANTALLA DE RELLENO (Solo queda Settings)
-@Composable
-fun SettingsScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Pantalla de Configuración en construcción ⚙️", fontSize = 24.sp, color = Color.Gray)
-    }
-}
 
-// 4. FUNCIÓN PARA GUARDAR PREFERENCIAS
+
 fun guardarConfiguracionFiltros(context: Context, tarifaMin: Double, impuesto: Double, distMax: Double, ganancia: Double) {
-    val sharedPreferences = context.getSharedPreferences("MotoAssistPrefs", Context.MODE_PRIVATE)
+    val sharedPreferences = context.getSharedPreferences("SocioAssistPrefs", Context.MODE_PRIVATE)
     sharedPreferences.edit {
         putFloat("tarifaMin", tarifaMin.toFloat())
         putFloat("impuesto", impuesto.toFloat())
@@ -364,9 +374,72 @@ fun guardarConfiguracionFiltros(context: Context, tarifaMin: Double, impuesto: D
     }
 }
 
-// 5. PREVIEW
+@Composable
+fun PermissionExplanationDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.NotificationsActive,
+                    contentDescription = null,
+                    tint = Color(0xFF0052CC)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Despertador Inteligente", fontWeight = FontWeight.Bold)
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Para ahorrar batería y no grabar la pantalla todo el tiempo, MotoAssist necesita escuchar las alertas de viaje de las plataformas."
+                )
+
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3CD)),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = "⚠️ Nota para dispositivos Xiaomi / Redmi / Poco:",
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF856404),
+                            fontSize = 13.sp
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Tu teléfono mostrará una advertencia de 'Peligro' y te pedirá esperar 10 segundos. Es solo un protocolo del sistema del fabricante. MotoAssist NO lee mensajes personales ni contraseñas.",
+                            color = Color(0xFF856404),
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0052CC))
+            ) {
+                Text("Continuar a Ajustes")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar", color = Color.Gray)
+            }
+        },
+        shape = RoundedCornerShape(16.dp),
+        containerColor = Color.White
+    )
+}
+
+
 @Preview(showBackground = true)
 @Composable
 fun DashboardPreview() {
-    MotoAssistApp()
+    SocioAssistApp()
 }

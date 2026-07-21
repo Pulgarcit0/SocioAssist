@@ -3,6 +3,7 @@ package com.valentin.socioassist.feature.permisos
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.os.PowerManager
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.ManagedActivityResultLauncher
@@ -10,17 +11,19 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.core.app.NotificationManagerCompat 
 import androidx.core.net.toUri
 import com.valentin.socioassist.core.FloatingService
 
 object PermisosManager {
 
-    // Verifica si ya tenemos el permiso de sobreponer apps
+    
+    
+    
     fun tienePermisoSuperposicion(context: Context): Boolean {
         return Settings.canDrawOverlays(context)
     }
 
-    // Abre la pantalla de ajustes para pedir el permiso
     fun solicitarPermisoSuperposicion(context: Context) {
         Toast.makeText(context, "Concede el permiso para mostrar sobre otras apps", Toast.LENGTH_LONG).show()
         val intent = Intent(
@@ -29,9 +32,45 @@ object PermisosManager {
         )
         context.startActivity(intent)
     }
+
+    
+    
+    
+    fun tienePermisoBateria(context: Context): Boolean {
+        val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        return powerManager.isIgnoringBatteryOptimizations(context.packageName)
+    }
+
+    fun solicitarPermisoBateria(context: Context) {
+        if (!tienePermisoBateria(context)) {
+            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                data = "package:${context.packageName}".toUri()
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(intent)
+        }
+    }
+
+    
+    
+    
+    fun tienePermisoNotificaciones(context: Context): Boolean {
+        val paquetesConPermiso = NotificationManagerCompat.getEnabledListenerPackages(context)
+        return paquetesConPermiso.contains(context.packageName)
+    }
+
+    fun solicitarPermisoNotificaciones(context: Context) {
+        Toast.makeText(context, "Concede acceso a las notificaciones para detectar viajes", Toast.LENGTH_LONG).show()
+        val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        context.startActivity(intent)
+    }
 }
 
-// Fíjate que aquí solo hay 3 parámetros (context, onSuccess, onError). ¡Nada de 'function'!
+
+
+
 @Composable
 fun rememberScreenCaptureLauncher(
     context: Context,
@@ -51,10 +90,8 @@ fun rememberScreenCaptureLauncher(
             } else {
                 context.startService(intent)
             }
-            // Disparamos la acción de éxito (cambiar el botón a azul)
             onSuccess()
         } else {
-            // Disparamos la acción de error (mantener el botón en gris)
             onError()
         }
     }

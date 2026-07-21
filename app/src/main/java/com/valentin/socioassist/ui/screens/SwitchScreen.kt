@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.valentin.socioassist.feature.asistente.PlataformaManager
 
-// Colores extraídos de tu Tailwind Config
+
 val BackgroundColor = Color(0xFFF8F9FF)
 val OnSurfaceColor = Color(0xFF0B1C30)
 val OnSurfaceVariantColor = Color(0xFF424754)
@@ -32,14 +32,14 @@ val OutlineVariantColor = Color(0xFFC2C6D6)
 
 @Composable
 fun SwitchScreen(
-    isServiceRunning: Boolean, // AÑADIDO: Recibimos el estado del servicio
-    onSetServiceRunning: (Boolean) -> Unit, // AÑADIDO: Función para apagar/encender el servicio
+    isServiceRunning: Boolean,
+    onSetServiceRunning: (Boolean) -> Unit,
     onSolicitarPermiso: () -> Unit
 ) {
     val context = LocalContext.current
-    // Si no hay plataforma guardada, ponemos "Didi" por default
+
     var plataformaActiva by remember {
-        mutableStateOf(PlataformaManager.obtenerPlataformaActiva(context) ?: "Didi")
+        mutableStateOf(PlataformaManager.obtenerPlataformaActiva(context) ?: "Didi Moto/Auto")
     }
 
     Column(
@@ -49,81 +49,124 @@ fun SwitchScreen(
             .padding(horizontal = 24.dp, vertical = 32.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        // Título y descripción
+        
         Text(
             text = "Plataformas de Viaje",
-            fontSize = 30.sp, // Tamaño adaptado de Tailwind headline-lg-mobile
+            fontSize = 30.sp,
             fontWeight = FontWeight.Bold,
             color = OnSurfaceColor
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "Gestiona tus aplicaciones activas para recibir viajes de diferentes fuentes.",
-            fontSize = 16.sp, // body-md
+            fontSize = 16.sp,
             color = OnSurfaceVariantColor,
             lineHeight = 24.sp
         )
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Grid de Plataformas (En móvil se muestra como columna)
+        
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
 
-            // Didi
+            
             PlataformaCardHtml(
-                nombre = "Didi",
+                nombre = "Didi Moto/Auto",
                 icono = Icons.Default.DirectionsCar,
-                colorTema = Color(0xFFFF7D00), // Naranja exacto de Tailwind
-                // AÑADIDO: Verificamos si la plataforma está activa Y el servicio está corriendo
-                isActivo = (plataformaActiva == "Didi" && isServiceRunning),
+                colorTema = Color(0xFFFF7D00), 
+                isActivo = (plataformaActiva == "Didi Moto/Auto" && isServiceRunning),
                 onCheckedChange = { activo ->
-                    manejarCambioPlataforma(activo, "Didi", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
+                    manejarCambioPlataforma(activo, "Didi Moto/Auto", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
                 }
             )
 
-            // Uber
+            
             PlataformaCardHtml(
-                nombre = "Uber",
+                nombre = "Uber Moto/Auto",
                 icono = Icons.Default.LocalTaxi,
-                colorTema = Color(0xFF000000), // Negro
-                isActivo = (plataformaActiva == "Uber" && isServiceRunning),
+                colorTema = Color(0xFF000000), 
+                isActivo = (plataformaActiva == "Uber Moto/Auto" && isServiceRunning),
                 onCheckedChange = { activo ->
-                    manejarCambioPlataforma(activo, "Uber", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
+                    manejarCambioPlataforma(activo, "Uber Moto/Auto", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
                 }
             )
 
-            // Cabify
+            
+            PlataformaCardHtml(
+                nombre = "inDrive",
+                icono = Icons.Default.ElectricRickshaw, 
+                colorTema = Color(0xFF00D166), 
+                isActivo = (plataformaActiva == "inDrive" && isServiceRunning),
+                onCheckedChange = { activo ->
+                    manejarCambioPlataforma(activo, "inDrive", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
+                }
+            )
+
+            
+            PlataformaCardHtml(
+                nombre = "Didi Food",
+                icono = Icons.Default.Restaurant, 
+                colorTema = Color(0xFFFF7D00), 
+                isActivo = (plataformaActiva == "Didi Food" && isServiceRunning),
+                onCheckedChange = { activo ->
+                    manejarCambioPlataforma(activo, "Didi Food", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
+                }
+            )
+
+            
+            PlataformaCardHtml(
+                nombre = "Uber Eats",
+                icono = Icons.Default.DeliveryDining, 
+                colorTema = Color(0xFF06C167), 
+                isActivo = (plataformaActiva == "Uber Eats" && isServiceRunning),
+                onCheckedChange = { activo ->
+                    manejarCambioPlataforma(activo, "Uber Eats", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
+                }
+            )
+
+            
+            PlataformaCardHtml(
+                nombre = "Rappi",
+                icono = Icons.Default.TwoWheeler, 
+                colorTema = Color(0xFFFF441F), 
+                isActivo = (plataformaActiva == "Rappi" && isServiceRunning),
+                onCheckedChange = { activo ->
+                    manejarCambioPlataforma(activo, "Rappi", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
+                }
+            )
+
+            
             PlataformaCardHtml(
                 nombre = "Cabify",
                 icono = Icons.Default.AirportShuttle,
-                colorTema = Color(0xFF7145D6), // Morado exacto
+                colorTema = Color(0xFF7145D6), 
                 isActivo = (plataformaActiva == "Cabify" && isServiceRunning),
                 onCheckedChange = { activo ->
                     manejarCambioPlataforma(activo, "Cabify", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
                 }
             )
 
-            // Rappi
+            
             PlataformaCardHtml(
-                nombre = "Rappi",
-                icono = Icons.Default.TwoWheeler,
-                colorTema = Color(0xFFFF441F), // Rojo exacto
-                isActivo = (plataformaActiva == "Rappi" && isServiceRunning),
+                nombre = "Lalamove",
+                icono = Icons.Default.LocalShipping, 
+                colorTema = Color(0xFFF15A24), 
+                isActivo = (plataformaActiva == "Lalamove" && isServiceRunning),
                 onCheckedChange = { activo ->
-                    manejarCambioPlataforma(activo, "Rappi", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
+                    manejarCambioPlataforma(activo, "Lalamove", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
                 }
             )
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Banner "Próximamente" estilo Bento HTML
+        
         BannerProximamenteHtml()
 
         Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
-// Función auxiliar para no repetir la lógica del manager en cada tarjeta
+
 private fun manejarCambioPlataforma(
     activo: Boolean,
     nombrePlataforma: String,
@@ -137,7 +180,6 @@ private fun manejarCambioPlataforma(
         PlataformaManager.guardarPlataformaActiva(context, nombrePlataforma)
         onSolicitarPermiso()
     } else {
-        // Apagamos el servicio global si el usuario desactiva el switch
         onSetServiceRunning(false)
     }
 }
@@ -150,12 +192,11 @@ fun PlataformaCardHtml(
     isActivo: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
-    // Si está inactivo, bajamos la opacidad del texto como en tu script JS
     val opacidad = if (isActivo) 1f else 0.7f
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp), // rounded-xl de Tailwind
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.dp, OutlineVariantColor.copy(alpha = 0.3f)),
         elevation = CardDefaults.cardElevation(defaultElevation = if (isActivo) 4.dp else 1.dp)
@@ -168,7 +209,7 @@ fun PlataformaCardHtml(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Círculo con el icono y fondo al 10% de opacidad
+                
                 Box(
                     modifier = Modifier
                         .size(48.dp)
@@ -184,7 +225,7 @@ fun PlataformaCardHtml(
                     )
                 }
 
-                // Custom Switch imitando Tailwind
+                
                 Switch(
                     checked = isActivo,
                     onCheckedChange = onCheckedChange,
@@ -192,7 +233,7 @@ fun PlataformaCardHtml(
                         checkedThumbColor = Color.White,
                         checkedTrackColor = PrimaryColor,
                         uncheckedThumbColor = Color.White,
-                        uncheckedTrackColor = Color(0xFFD3E4FE), // surface-variant
+                        uncheckedTrackColor = Color(0xFFD3E4FE),
                         uncheckedBorderColor = Color.Transparent
                     )
                 )
@@ -221,14 +262,13 @@ fun PlataformaCardHtml(
 fun BannerProximamenteHtml() {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp), // rounded-2xl
-        colors = CardDefaults.cardColors(containerColor = PrimaryColor.copy(alpha = 0.05f)), // bg-primary-container/10
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = PrimaryColor.copy(alpha = 0.05f)),
         border = BorderStroke(1.dp, PrimaryColor.copy(alpha = 0.2f))
     ) {
         Column(
-            modifier = Modifier.padding(32.dp) // p-8
+            modifier = Modifier.padding(32.dp)
         ) {
-            // Etiqueta (Badge)
             Surface(
                 color = PrimaryColor.copy(alpha = 0.1f),
                 shape = RoundedCornerShape(50)
