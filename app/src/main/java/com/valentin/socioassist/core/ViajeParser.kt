@@ -5,47 +5,115 @@ import android.util.Log
 
 object ViajeParser {
 
-    // Le agregamos el Context como parámetro para poder leer las preferencias
-    fun analizarTexto(context: Context, texto: String): TripData? {
-        // 1. Filtro de seguridad: Si no es una alerta de DiDi Moto, abortamos rápido
-        if (!texto.contains("Aceptar", ignoreCase = true) || !texto.contains("Moto", ignoreCase = true)) {
-            return null
-        }
+    // Añadimos 'isUberMode' para saber el estado del switch
+    fun analizarTexto(context: Context, texto: String, isUberMode: Boolean): TripData? {
+
+        var precioBruto = 0.0
+        var distanciaTotal = 0.0
+        var tiempoTotal = 0
 
         try {
-            // 2. Extraer el precio bruto (Ej. $48.50)
-            val regexPrecio = Regex("\\$([0-9]+\\.[0-9]{2})")
-            val matchPrecio = regexPrecio.find(texto)
-            val precioBruto = matchPrecio?.groupValues?.get(1)?.toDoubleOrNull() ?: return null
+            if (isUberMode) {
+                // ==========================================
+                // LÓGICA PARA UBER MOTO / UBER X
+                // ==========================================
 
-            // 3. Extraer y sumar distancias (Kilómetros y Metros)
-            var distanciaTotal = 0.0
+                val palabrasClaveUber = listOf(
+                    "uber",       // Atrapa UberX, Uber Moto, Uber XL, Uber Planet...
+                    "exclusivo",  // Etiquetas de prioridad de la plataforma
+                    "viaje:",     // Formato de detalle específico
+                    "flash",      // Servicio de entregas y paquetería
+                    "comfort",    // Autos preferenciales
+                    "reserva"     // Viajes programados anticipadamente
+                )
 
-            // A) Buscar Kilómetros (Ej. "2.2km" o "2.2 km")
-            val regexKm = Regex("(\\d+(?:\\.\\d+)?)\\s*km", RegexOption.IGNORE_CASE)
-            val matchesKm = regexKm.findAll(texto)
-            for (match in matchesKm) {
-                distanciaTotal += match.groupValues[1].toDoubleOrNull() ?: 0.0
+                val esViajeUber = palabrasClaveUber.any { palabra ->
+                    texto.contains(palabra, ignoreCase = true)
+                }
+
+                if (!esViajeUber) {
+                    return null // Si no encuentra ninguna de las palabras, lo descarta
+                }
+
+                // 1. Extrae el precio (ej. "$19744" o "$197.44")
+                val precioRegex = Regex("""\$\s*(\d+[,.]?\d*)""")
+                val matchPrecio = precioRegex.find(texto) ?: return null
+
+                var brutoUber = matchPrecio.groupValues[1].replace(",", ".").toDoubleOrNull() ?: 0.0
+
+                // PARCHE OCR: Si lee un precio exagerado por comerse el punto decimal (ej. 19744)
+                if (brutoUber > 2000.0) {
+                    brutoUber /= 100
+                }
+                precioBruto = brutoUber
+
+                // 2. Extrae tiempo y distancia de recogida (ej. "A3 min y (0.8 km)")
+                val recogidaRegex = Regex("""(?:A\s*)?(\d+)\s*min\s*(?:y\s*)?\(?\s*(\d+[.,]?\d*)\s*km\)?""", RegexOption.IGNORE_CASE)
+                val matchRecogida = recogidaRegex.find(texto)
+                val minRecogida = matchRecogida?.groupValues?.get(1)?.toIntOrNull() ?: 0
+                val kmRecogida = matchRecogida?.groupValues?.get(2)?.replace(",", ".")?.toDoubleOrNull() ?: 0.0
+
+                // 3. Extrae tiempo y distancia del trayecto (ej. "Viaje: 51 min (37.2 km)")
+                val viajeRegex = Regex("""Viaje:?\s*(\d+)\s*min\s*\(?\s*(\d+[.,]?\d*)\s*km\)?""", RegexOption.IGNORE_CASE)
+                val matchViaje = viajeRegex.find(texto)
+                val minViaje = matchViaje?.groupValues?.get(1)?.toIntOrNull() ?: 0
+                val kmViaje = matchViaje?.groupValues?.get(2)?.replace(",", ".")?.toDoubleOrNull() ?: 0.0
+
+                distanciaTotal = kmRecogida + kmViaje
+                tiempoTotal = minRecogida + minViaje
+
+            } else {
+                // ==========================================
+                // LÓGICA PARA DIDI (AUTOS, MOTOS Y ENTREGAS)
+                // ==========================================
+
+                // Filtro de seguridad: Buscamos huellas exclusivas de DiDi
+                val palabrasClaveDidi = listOf(
+                    "didi",
+                    "express",      // Autos estándar
+                    "moto",         // Motocicletas
+                    "entrega",      // Paquetería
+                    "flex",         // Tarifas negociables
+                    "pon tu precio" // Modalidad de oferta
+                )
+
+                val esViajeDidi = palabrasClaveDidi.any { palabra ->
+                    texto.contains(palabra, ignoreCase = true)
+                }
+
+                // Si no encuentra ninguna palabra clave de DiDi, o si es un texto vacío, lo descarta
+                if (!esViajeDidi) {
+                    return null
+                }
+
+                // Extraer el precio bruto (Ej. $48.50)
+                val regexPrecio = Regex("\\$([0-9]+\\.[0-9]{2})")
+                val matchPrecio = regexPrecio.find(texto)
+                precioBruto = matchPrecio?.groupValues?.get(1)?.toDoubleOrNull() ?: return null
+
+                // Buscar Kilómetros y Metros de DiDi
+                val regexKm = Regex("(\\d+(?:\\.\\d+)?)\\s*km", RegexOption.IGNORE_CASE)
+                val matchesKm = regexKm.findAll(texto)
+                for (match in matchesKm) {
+                    distanciaTotal += match.groupValues[1].toDoubleOrNull() ?: 0.0
+                }
+
+                val regexMetros = Regex("(\\d+)\\s*m(?![a-zA-Z])", RegexOption.IGNORE_CASE)
+                val matchesMetros = regexMetros.findAll(texto)
+                for (match in matchesMetros) {
+                    val metros = match.groupValues[1].toDoubleOrNull() ?: 0.0
+                    distanciaTotal += (metros / 1000.0)
+                }
+
+                // Extraer minutos para DiDi
+                val regexMin = Regex("([0-9]+)\\s*min")
+                val matchesMin = regexMin.findAll(texto)
+                for (match in matchesMin) {
+                    tiempoTotal += match.groupValues[1].toIntOrNull() ?: 0
+                }
             }
 
-            // B) Buscar Metros (Ej. "690m" o "590 m")
-            val regexMetros = Regex("(\\d+)\\s*m(?![a-zA-Z])", RegexOption.IGNORE_CASE)
-            val matchesMetros = regexMetros.findAll(texto)
-            for (match in matchesMetros) {
-                val metros = match.groupValues[1].toDoubleOrNull() ?: 0.0
-                distanciaTotal += (metros / 1000.0) // Convertimos los metros a kilómetros
-            }
-
-            // 4. Extraer y sumar todos los minutos
-            val regexMin = Regex("([0-9]+)\\s*min")
-            val matchesMin = regexMin.findAll(texto)
-
-            var tiempoTotal = 0
-            for (match in matchesMin) {
-                tiempoTotal += match.groupValues[1].toIntOrNull() ?: 0
-            }
-
-            // Si no encontró kilómetros o el precio es cero, abortamos para evitar dividir entre cero
+            // Validar que tengamos datos reales antes de hacer matemáticas
             if (distanciaTotal == 0.0 || precioBruto == 0.0) return null
 
             // --- LECTURA DE PREFERENCIAS EN TIEMPO REAL ---
@@ -57,13 +125,8 @@ object ViajeParser {
             // ----------------------------------------------
 
             // 5. LÓGICA DE RENTABILIDAD Y MATEMÁTICAS FINANCIERAS
-            // Restamos el impuesto usando el valor configurado
             val impuesto = precioBruto * impuestoConf
-
-            // La ganancia neta libre de comisiones de la plataforma
             val gananciaNeta = precioBruto - impuesto
-
-            // ¿A cómo te están pagando el kilómetro realmente?
             val pagoPorKm = gananciaNeta / distanciaTotal
 
             // 6. SEMÁFORO DE DECISIÓN DINÁMICO
@@ -87,7 +150,6 @@ object ViajeParser {
                 sugerenciaTexto = "RECHAZAR"
             }
 
-            // Funciones auxiliares para redondear valores numéricos
             fun Double.redondear2Dec(): Double = Math.round(this * 100.0) / 100.0
             fun Double.redondear1Dec(): Double = Math.round(this * 10.0) / 10.0
 
@@ -103,7 +165,6 @@ object ViajeParser {
             )
 
         } catch (e: Exception) {
-            // Si la conversión de números falla en algún momento, registramos el error y soltamos el fotograma
             Log.e("MotoAssist_OCR", "Error calculando los datos del viaje: ${e.message}")
             return null
         }

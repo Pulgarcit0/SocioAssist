@@ -1,5 +1,6 @@
-    package com.valentin.socioassist.ui
+package com.valentin.socioassist.ui.overlay
     
+    import androidx.compose.animation.core.*
     import androidx.compose.foundation.background
     import androidx.compose.foundation.clickable
     import androidx.compose.foundation.gestures.detectDragGestures
@@ -13,14 +14,18 @@
     import androidx.compose.ui.Alignment
     import androidx.compose.ui.Modifier
     import androidx.compose.ui.graphics.Color
+    import androidx.compose.ui.graphics.graphicsLayer
     import androidx.compose.ui.input.pointer.pointerInput
     import androidx.compose.ui.text.font.FontWeight
     import androidx.compose.ui.unit.dp
     import androidx.compose.ui.unit.sp
-    
     import com.valentin.socioassist.core.TripData
     import com.valentin.socioassist.core.NivelRentabilidad
-    
+    import kotlinx.coroutines.delay
+    import kotlin.time.Duration.Companion.milliseconds
+    import kotlin.math.sin
+    import kotlin.math.PI
+
     @Composable
     fun FloatingOverlay(
         tripData: TripData?,
@@ -45,33 +50,82 @@
             }
         }
     }
-    
+
     @Composable
     fun WaitingTripCard() {
+        // 1. Estado para saber si el viaje está tardando
+        var estaAburrido by remember { mutableStateOf(false) }
+
+        // 2. Temporizador de 1 minuto
+        LaunchedEffect(Unit) {
+            delay(60000L.milliseconds)
+            estaAburrido = true
+        }
+
+        // ==========================================
+        // 3. ANIMACIÓN AVANZADA DEL GUSANITO
+        // ==========================================
+        val infiniteTransition = rememberInfiniteTransition(label = "animacion_gusano")
+
+        // Creamos un ciclo que va de 0f a 2f (1 segundo de ida, 1 segundo de vuelta)
+        val progreso by infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 2f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 2000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart // Reinicia porque nosotros controlaremos la reversa
+            ),
+            label = "progreso_ciclo"
+        )
+
+        // Calculamos si está en el viaje de ida (hacia la derecha) o de regreso
+        val vaHaciaLaDerecha = progreso <= 1f
+
+        // Calculamos la posición en X (horizontal)
+        val desplazamientoX = if (vaHaciaLaDerecha) {
+            (progreso * 16f) - 8f // Va de -8 a 8
+        } else {
+            8f - ((progreso - 1f) * 16f) // Regresa de 8 a -8
+        }
+
+        // Calculamos la posición en Y (ondulado / saltitos) usando función Seno
+        // Multiplicado por 6 significa que dará 3 "saltitos" de ida y 3 de vuelta.
+        // Multiplicado por -3f define la altura del salto en píxeles (hacia arriba).
+        val desplazamientoY = (sin(progreso * PI * 6).toFloat()) * -3f
+
+        // Volteamos el emoji.
+        // OJO: El emoji original "🐛" por defecto mira hacia la izquierda.
+        // Si va a la derecha, lo volteamos (-1f). Si va a la izquierda, lo dejamos normal (1f).
+        val escalaX = if (vaHaciaLaDerecha) -1f else 1f
+
+        // 4. Elegimos el emoji
+        val emojiFlotante = if (estaAburrido) "🐛" else "🍏"
+
+        // 5. Aplicamos el movimiento y el volteo SOLO si está aburrido
+        val modifierEmoji = if (estaAburrido) {
+            Modifier
+                .offset(x = desplazamientoX.dp, y = desplazamientoY.dp)
+                .graphicsLayer(scaleX = escalaX) // ¡Esto es lo que hace que se voltee!
+        } else {
+            Modifier
+        }
+
         Card(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 16.dp)
+                .padding(8.dp)
                 .wrapContentSize(),
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(50),
             colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A).copy(alpha = 0.85f)),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Box(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(
-                    color = Color(0xFF16A34A),
-                    strokeWidth = 2.dp,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(10.dp))
                 Text(
-                    text = "...",
-                    color = Color.White,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium
+                    text = emojiFlotante,
+                    fontSize = 16.sp,
+                    modifier = modifierEmoji
                 )
             }
         }

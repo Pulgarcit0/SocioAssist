@@ -38,9 +38,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
-import com.valentin.socioassist.ui.FloatingOverlay
 import kotlin.time.Duration.Companion.milliseconds
+
+// IMPORT PARA LEER EL ESTADO DEL SWITCH
+import com.valentin.socioassist.feature.asistente.PlataformaManager
+import com.valentin.socioassist.ui.overlay.FloatingOverlay
 
 // Modelo de datos global para el servicio y la UI
 enum class NivelRentabilidad {
@@ -58,26 +60,21 @@ data class TripData(
 
 @Suppress("DEPRECATION")
 class FloatingService : LifecycleService() {
-
-    // Variables de UI
+    companion object {
+        var isRunning = false
+    }
     private lateinit var windowManager: WindowManager
     private lateinit var composeView: ComposeView
     private val customLifecycleOwner = ServiceLifecycleOwner()
-
-    // Estado observable para Jetpack Compose inicializado en null con su tipo explícito
     private val currentTripState = mutableStateOf<TripData?>(null)
-
-    // Variables de Grabación de Pantalla (OCR)
     private var mediaProjection: MediaProjection? = null
     private var virtualDisplay: VirtualDisplay? = null
     private var imageReader: ImageReader? = null
     private val textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
     private var isProcessing = false
-
-    // Variables para el temporizador de 10 segundos
     private val mainHandler = Handler(Looper.getMainLooper())
     private val resetRunnable = Runnable {
-        currentTripState.value = null // Devuelve la tarjeta a "Esperando viaje..."
+        currentTripState.value = null
     }
 
     // NUEVO: Bandera para la pausa de 3 segundos al presionar "X"
@@ -85,10 +82,10 @@ class FloatingService : LifecycleService() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate() {
+        isRunning = true
         super.onCreate()
         customLifecycleOwner.onCreate()
         customLifecycleOwner.onStart()
-
         setupFloatingWindow()
     }
 
@@ -150,7 +147,7 @@ class FloatingService : LifecycleService() {
                         // 2. Iniciamos la pausa de 3 segundos
                         CoroutineScope(Dispatchers.Main).launch {
                             isScannerPaused = true
-                            delay(3000. milliseconds) // Pausa de 3000 milisegundos
+                            delay(3000.milliseconds) // Pausa de 3000 milisegundos
                             isScannerPaused = false
                         }
                     }
@@ -220,10 +217,31 @@ class FloatingService : LifecycleService() {
 
                 textRecognizer.process(inputImage)
                     .addOnSuccessListener { visionText ->
-                        val viajeDetectado = ViajeParser.analizarTexto(this@FloatingService, visionText.text)
+                        val textoCrudo = visionText.text
+
+                        // ==========================================
+                        // 🚀 LOGS DE DEPURACIÓN (DEBUG)
+                        // ==========================================
+                        Log.d("MotoAssist_Debug", "========================================")
+                        Log.d("MotoAssist_Debug", "📸 TEXTO CAPTURADO POR OCR:")
+                        Log.d("MotoAssist_Debug", "\n$textoCrudo")
+                        Log.d("MotoAssist_Debug", "========================================")
+
+                        // 1. LEEMOS EL SWITCH EN TIEMPO REAL
+                        val plataformaActiva = PlataformaManager.obtenerPlataformaActiva(this@FloatingService)
+                        val isUberMode = (plataformaActiva == "Uber")
+
+                        Log.d("MotoAssist_Debug", "⚙️ Modo actual detectado: $plataformaActiva (isUberMode = $isUberMode)")
+
+                        // 2. LLAMAMOS AL PARSER CON EL MODO CORRECTO
+                        val viajeDetectado = ViajeParser.analizarTexto(
+                            context = this@FloatingService,
+                            texto = textoCrudo,
+                            isUberMode = isUberMode
+                        )
 
                         if (viajeDetectado != null) {
-                            Log.d("MotoAssist_OCR", "✅ ¡Viaje válido encontrado! Actualizando tarjeta.")
+                            Log.d("MotoAssist_OCR", "✅ ¡Viaje válido de $plataformaActiva encontrado! Actualizando tarjeta.")
                             currentTripState.value = viajeDetectado
 
                             mainHandler.removeCallbacks(resetRunnable)
@@ -233,6 +251,8 @@ class FloatingService : LifecycleService() {
                                 Log.d("MotoAssist_OCR", "🧹 El viaje desapareció. Limpiando tarjeta al instante.")
                                 currentTripState.value = null
                                 mainHandler.removeCallbacks(resetRunnable)
+                            } else {
+                                Log.d("MotoAssist_Debug", "⚠️ El Parser devolvió NULL. Las expresiones regulares no encontraron coincidencias.")
                             }
                         }
                     }
@@ -243,6 +263,7 @@ class FloatingService : LifecycleService() {
                         bitmap.recycle()
                         isProcessing = false
                     }
+
             } catch (e: Exception) {
                 Log.e("MotoAssist_OCR", "⚠️ Error al convertir/leer el frame", e)
                 try { image.close() } catch (_: Exception) {}
@@ -276,13 +297,25 @@ class FloatingService : LifecycleService() {
     }
 
     override fun onDestroy() {
+        isRunning = false // MARCAMOS COMO APAGADO
         super.onDestroy()
-        if (::composeView.isInitialized) {
-            windowManager.removeView(composeView)
+
+        // Protegemos la remoción de la vista con un try-catch para evitar que se trabe
+        try {
+            if (::composeView.isInitialized) {
+                windowManager.removeView(composeView)
+            }
+        } catch (e: Exception) {
+            Log.e("MotoAssist", "Error al remover la ventana flotante", e)
         }
-        virtualDisplay?.release()
-        imageReader?.close()
-        mediaProjection?.stop()
-        customLifecycleOwner.onDestroy()
+
+        // Cerramos los recursos de forma segura
+        try { virtualDisplay?.release() } catch (e: Exception) {}
+        try { imageReader?.close() } catch (e: Exception) {}
+        try { mediaProjection?.stop() } catch (e: Exception) {}
+        try { customLifecycleOwner.onDestroy() } catch (e: Exception) {}
+
+        // Obligamos a Android a matar la notificación y el servicio de primer plano
+        stopForeground(true)
     }
 }

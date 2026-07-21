@@ -41,7 +41,6 @@ fun MotoAssistApp() {
     val navController = rememberNavController()
     var tabSeleccionada by remember { mutableIntStateOf(0) }
 
-    // --- MOVIMOS ESTO AQUÍ ARRIBA PARA QUE TODAS LAS PANTALLAS LO PUEDAN USAR ---
     val mediaProjectionManager = context.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as android.media.projection.MediaProjectionManager
     var isServiceRunning by remember { mutableStateOf(false) }
 
@@ -126,15 +125,30 @@ fun MotoAssistApp() {
                     }
                 )
             }
+
+            // ==============================================================
+            // AQUÍ ESTÁ EL BLOQUE ACTUALIZADO EXACTAMENTE EN SU LUGAR
+            // ==============================================================
             composable("switch") {
-                // Le pasamos la función a la pantalla de Switch
+                // Le pasamos el estado y la función a la pantalla de Switch para sincronizarlos
                 SwitchScreen(
+                    isServiceRunning = isServiceRunning,
+                    onSetServiceRunning = { isRunning ->
+                        isServiceRunning = isRunning
+                        // Si nos mandan apagar desde el switch, matamos el servicio aquí mismo
+                        if (!isRunning) {
+                            val intent = Intent(context, FloatingService::class.java)
+                            context.stopService(intent)
+                        }
+                    },
                     onSolicitarPermiso = {
                         val captureIntent = mediaProjectionManager.createScreenCaptureIntent()
                         screenCaptureLauncher.launch(captureIntent)
                     }
                 )
             }
+            // ==============================================================
+
             composable("settings") { SettingsScreen() }
         }
     }

@@ -32,11 +32,14 @@ val OutlineVariantColor = Color(0xFFC2C6D6)
 
 @Composable
 fun SwitchScreen(
+    isServiceRunning: Boolean, // AÑADIDO: Recibimos el estado del servicio
+    onSetServiceRunning: (Boolean) -> Unit, // AÑADIDO: Función para apagar/encender el servicio
     onSolicitarPermiso: () -> Unit
 ) {
     val context = LocalContext.current
+    // Si no hay plataforma guardada, ponemos "Didi" por default
     var plataformaActiva by remember {
-        mutableStateOf(PlataformaManager.obtenerPlataformaActiva(context))
+        mutableStateOf(PlataformaManager.obtenerPlataformaActiva(context) ?: "Didi")
     }
 
     Column(
@@ -70,9 +73,10 @@ fun SwitchScreen(
                 nombre = "Didi",
                 icono = Icons.Default.DirectionsCar,
                 colorTema = Color(0xFFFF7D00), // Naranja exacto de Tailwind
-                isActivo = plataformaActiva == "Didi",
+                // AÑADIDO: Verificamos si la plataforma está activa Y el servicio está corriendo
+                isActivo = (plataformaActiva == "Didi" && isServiceRunning),
                 onCheckedChange = { activo ->
-                    manejarCambioPlataforma(activo, "Didi", context, onSolicitarPermiso) { plataformaActiva = it }
+                    manejarCambioPlataforma(activo, "Didi", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
                 }
             )
 
@@ -81,9 +85,9 @@ fun SwitchScreen(
                 nombre = "Uber",
                 icono = Icons.Default.LocalTaxi,
                 colorTema = Color(0xFF000000), // Negro
-                isActivo = plataformaActiva == "Uber",
+                isActivo = (plataformaActiva == "Uber" && isServiceRunning),
                 onCheckedChange = { activo ->
-                    manejarCambioPlataforma(activo, "Uber", context, onSolicitarPermiso) { plataformaActiva = it }
+                    manejarCambioPlataforma(activo, "Uber", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
                 }
             )
 
@@ -92,9 +96,9 @@ fun SwitchScreen(
                 nombre = "Cabify",
                 icono = Icons.Default.AirportShuttle,
                 colorTema = Color(0xFF7145D6), // Morado exacto
-                isActivo = plataformaActiva == "Cabify",
+                isActivo = (plataformaActiva == "Cabify" && isServiceRunning),
                 onCheckedChange = { activo ->
-                    manejarCambioPlataforma(activo, "Cabify", context, onSolicitarPermiso) { plataformaActiva = it }
+                    manejarCambioPlataforma(activo, "Cabify", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
                 }
             )
 
@@ -103,9 +107,9 @@ fun SwitchScreen(
                 nombre = "Rappi",
                 icono = Icons.Default.TwoWheeler,
                 colorTema = Color(0xFFFF441F), // Rojo exacto
-                isActivo = plataformaActiva == "Rappi",
+                isActivo = (plataformaActiva == "Rappi" && isServiceRunning),
                 onCheckedChange = { activo ->
-                    manejarCambioPlataforma(activo, "Rappi", context, onSolicitarPermiso) { plataformaActiva = it }
+                    manejarCambioPlataforma(activo, "Rappi", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
                 }
             )
         }
@@ -125,15 +129,16 @@ private fun manejarCambioPlataforma(
     nombrePlataforma: String,
     context: android.content.Context,
     onSolicitarPermiso: () -> Unit,
-    setPlataformaActiva: (String?) -> Unit
+    onSetServiceRunning: (Boolean) -> Unit,
+    setPlataformaActiva: (String) -> Unit
 ) {
     if (activo) {
         setPlataformaActiva(nombrePlataforma)
         PlataformaManager.guardarPlataformaActiva(context, nombrePlataforma)
         onSolicitarPermiso()
     } else {
-        setPlataformaActiva(null)
-        PlataformaManager.guardarPlataformaActiva(context, null)
+        // Apagamos el servicio global si el usuario desactiva el switch
+        onSetServiceRunning(false)
     }
 }
 
@@ -265,10 +270,6 @@ fun BannerProximamenteHtml() {
                 color = OnSurfaceVariantColor,
                 lineHeight = 24.sp
             )
-
-            // Nota: Para cargar la imagen del conejo desde la URL necesitaríamos
-            // la librería "Coil" de Compose. Si la necesitas me avisas, mientras
-            // tanto mantenemos el texto limpio como en el diseño de Tailwind.
         }
     }
 }

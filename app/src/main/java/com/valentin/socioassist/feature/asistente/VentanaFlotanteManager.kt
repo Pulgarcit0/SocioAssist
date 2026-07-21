@@ -2,7 +2,6 @@ package com.valentin.socioassist.feature.asistente
 
 import android.content.Context
 import android.graphics.PixelFormat
-import android.os.Build
 import android.view.Gravity
 import android.view.WindowManager
 import androidx.compose.ui.platform.ComposeView
@@ -17,8 +16,8 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.valentin.socioassist.core.TripData
-import com.valentin.socioassist.ui.FloatingOverlay
-import com.valentin.socioassist.R
+import com.valentin.socioassist.ui.overlay.FloatingOverlay
+
 class VentanaFlotanteManager(private val context: Context) {
 
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
