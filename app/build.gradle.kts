@@ -14,7 +14,7 @@ android {
 
     defaultConfig {
         applicationId = "com.valentin.socioassist"
-        minSdk = 26 
+        minSdk = 26
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
@@ -49,6 +49,9 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.service)
+
+    // AQUÍ ESTABA LA LÍNEA QUE CAUSABA EL ERROR. YA FUE ELIMINADA.
+
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
@@ -74,4 +77,6 @@ dependencies {
     implementation("androidx.credentials:credentials-play-services-auth:1.2.1")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
 
+    // Esta es la versión correcta de Firestore controlada por el BOM
+    implementation("com.google.firebase:firebase-firestore")
 }

@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.valentin.socioassist" />
+                  <option name="mobileSdkAppId" value="1:670654947146:android:bcf643ba1b54aa9470abb3" />
+                  <option name="projectId" value="socioassist-a9382" />
+                  <option name="projectNumber" value="670654947146" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

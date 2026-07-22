@@ -31,6 +31,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.valentin.socioassist.R
 import com.valentin.socioassist.core.FloatingService
+import com.valentin.socioassist.core.actualizarConfiguracionEnFirestore
+import com.valentin.socioassist.core.crearUsuarioEnFirestore
 import com.valentin.socioassist.feature.permisos.PermisosManager
 import com.valentin.socioassist.feature.permisos.rememberScreenCaptureLauncher
 
@@ -138,7 +140,16 @@ fun SocioAssistApp() {
             }
             composable("google_success") {
                 GoogleSuccessScreen(
-                    onContinueClick = { navController.navigate("step1_tariff") }
+                    onContinueClick = {
+                        // Antes de ir al step1, guardamos en Firestore
+                        crearUsuarioEnFirestore { exito ->
+                            if(exito){
+                                navController.navigate("step1_tariff")
+                            } else {
+                                Toast.makeText(context, "Error al guardar el perfil", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
                 )
             }
             composable("step1_tariff") {
@@ -382,8 +393,18 @@ fun HomeScreen(
                 val impuesto = tarifaImpuesto.toDoubleOrNull() ?: 0.0
                 val distMax = distanciaMaxima.toDoubleOrNull() ?: 0.0
                 val ganancia = gananciaNeta.toDoubleOrNull() ?: 0.0
+
+                // 1. Guardamos localmente en el teléfono (como ya lo tenías)
                 guardarConfiguracionFiltros(context, tarifaMin, impuesto, distMax, ganancia)
-                Toast.makeText(context, "¡Configuración guardada con éxito!", Toast.LENGTH_SHORT).show()
+
+                // 2. Guardamos en la nube de Firestore
+                actualizarConfiguracionEnFirestore(tarifaMin, impuesto, distMax, ganancia) { exito ->
+                    if (exito) {
+                        Toast.makeText(context, "¡Configuración guardada en la nube!", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Error al guardar en internet", Toast.LENGTH_SHORT).show()
+                    }
+                }
             },
             modifier = Modifier.fillMaxWidth().height(50.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF1F1F1)),

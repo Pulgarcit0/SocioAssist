@@ -27,10 +27,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 val CardBackgroundColor = Color.White
 val LightBlueCardColor = Color(0xFFF1F5F9)
 val TextRedColor = Color(0xFFE02424)
+val TextOrangeColor = Color(0xFFD97706) // Color para los días de prueba
 
 @Composable
 fun SettingsScreen(
@@ -38,10 +43,16 @@ fun SettingsScreen(
     onLogoutClick: () -> Unit,
     onManageSubscriptionClick: () -> Unit
 ) {
-    // 1. ESTADOS PARA GUARDAR LA INFORMACIÓN DE GOOGLE
+    // 1. ESTADOS PARA GUARDAR LA INFORMACIÓN
     var userName by remember { mutableStateOf("Cargando perfil...") }
     var userPhotoUrl by remember { mutableStateOf<String?>(null) }
     var calificacionMostrada by remember { mutableStateOf("4.95") }
+
+    // Estados para la suscripción
+    var tipoPlan by remember { mutableStateOf("cargando") }
+    var esPremium by remember { mutableStateOf(false) }
+    var fechaVencimiento by remember { mutableStateOf("") }
+    var diasRestantes by remember { mutableStateOf(0) }
 
     // 2. EFECTO PARA EXTRAER LOS DATOS AL ABRIR LA PANTALLA
     LaunchedEffect(Unit) {
@@ -49,8 +60,70 @@ fun SettingsScreen(
         if (currentUser != null) {
             userName = currentUser.displayName ?: "Socio"
             userPhotoUrl = currentUser.photoUrl?.toString()
+
+            // Consultar datos de Firestore
+            val db = FirebaseFirestore.getInstance()
+            db.collection("Usuarios").document(currentUser.uid).get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        tipoPlan = document.getString("tipoPlan") ?: "gratis"
+                        esPremium = document.getBoolean("premium") ?: false
+                        fechaVencimiento = document.getString("fechaVencimiento") ?: ""
+
+                        // Lógica para calcular los días restantes
+                        if (fechaVencimiento.isNotEmpty() && fechaVencimiento != "Sin vencimiento") {
+                            try {
+                                val formatoFecha = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale("es", "MX"))
+                                val fechaVenc = formatoFecha.parse(fechaVencimiento)
+                                if (fechaVenc != null) {
+                                    val diffMilis = fechaVenc.time - System.currentTimeMillis()
+                                    val dias = TimeUnit.MILLISECONDS.toDays(diffMilis).toInt()
+                                    diasRestantes = if (dias < 0) 0 else dias
+                                }
+                            } catch (e: Exception) {
+                                diasRestantes = 0
+                            }
+                        }
+                    }
+                }
         } else {
             userName = "Socio"
+        }
+    }
+
+    // 3. LÓGICA DINÁMICA DE LA TARJETA
+    val tituloMembresia: String
+    val mensajeMembresia: String
+    val colorMembresia: Color
+    val textoBoton: String
+
+    when {
+        esPremium -> {
+            tituloMembresia = "MEMBRESÍA PREMIUM"
+            // Solo mostramos la fecha sin la hora para que se vea más limpio
+            val fechaCorta = fechaVencimiento.substringBefore(" ")
+            mensajeMembresia = "Próxima renovación: $fechaCorta"
+            colorMembresia = PrimaryColor
+            textoBoton = "Gestionar Suscripción"
+        }
+        tipoPlan == "prueba" && diasRestantes > 0 -> {
+            tituloMembresia = "PRUEBA GRATUITA"
+            mensajeMembresia = "Te quedan $diasRestantes días restantes."
+            colorMembresia = TextOrangeColor
+            textoBoton = "Adquirir Premium"
+        }
+        tipoPlan == "cargando" -> {
+            tituloMembresia = "VERIFICANDO PLAN..."
+            mensajeMembresia = "Consultando estado de tu cuenta."
+            colorMembresia = Color.Gray
+            textoBoton = "Cargando..."
+        }
+        else -> {
+            // El mensaje triste pero profesional
+            tituloMembresia = "PLAN EXPIRADO"
+            mensajeMembresia = "Tu acceso ha concluido. Esperamos haberte sido de gran ayuda; actualiza a Premium para seguir rodando juntos."
+            colorMembresia = TextRedColor
+            textoBoton = "Renovar Membresía"
         }
     }
 
@@ -68,7 +141,6 @@ fun SettingsScreen(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            // Foto de perfil usando Coil de forma segura
             AsyncImage(
                 model = userPhotoUrl,
                 contentDescription = "Foto de perfil",
@@ -77,7 +149,6 @@ fun SettingsScreen(
                     .clip(CircleShape)
                     .background(Color.LightGray),
                 contentScale = ContentScale.Crop,
-                // SOLUCIÓN AL CRASH 1: Usar un icono de Compose en lugar del de Android
                 fallback = rememberVectorPainter(Icons.Default.AccountCircle),
                 error = rememberVectorPainter(Icons.Default.AccountCircle)
             )
@@ -115,7 +186,7 @@ fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- TARJETA SUSCRIPCIÓN ---
+        // --- TARJETA SUSCRIPCIÓN DINÁMICA ---
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -127,21 +198,21 @@ fun SettingsScreen(
                     Icon(
                         imageVector = Icons.Outlined.WorkspacePremium,
                         contentDescription = null,
-                        tint = PrimaryColor,
+                        tint = colorMembresia,
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "MEMBRESÍA PREMIUM",
+                        text = tituloMembresia,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = PrimaryColor,
+                        color = colorMembresia,
                         letterSpacing = 1.sp
                     )
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "Próxima renovación: 15 de Octubre",
+                    text = mensajeMembresia,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = OnSurfaceColor
@@ -151,9 +222,9 @@ fun SettingsScreen(
                     onClick = onManageSubscriptionClick,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+                    colors = ButtonDefaults.buttonColors(containerColor = colorMembresia)
                 ) {
-                    Text(text = "Gestionar Suscripción", fontSize = 16.sp)
+                    Text(text = textoBoton, fontSize = 16.sp)
                 }
             }
         }
@@ -233,7 +304,6 @@ fun SettingsScreen(
 
         SettingsSection(
             items = listOf(
-                // SOLUCIÓN AL CRASH 2: Quitamos los AutoMirrored que causan conflictos
                 SettingsItem("Centro de Ayuda", Icons.Outlined.HelpOutline),
                 SettingsItem("Términos y Condiciones", Icons.Outlined.Description)
             )
@@ -255,7 +325,6 @@ fun SettingsScreen(
             colors = ButtonDefaults.outlinedButtonColors(contentColor = TextRedColor)
         ) {
             Icon(
-                // SOLUCIÓN AL CRASH 2: Quitamos el AutoMirrored del Logout
                 imageVector = Icons.Outlined.Logout,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp)
