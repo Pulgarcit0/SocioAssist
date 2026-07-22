@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -60,4 +61,17 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.navigation:navigation-compose:2.7.7")
     implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation(platform("com.google.firebase:firebase-bom:34.16.0"))
+
+    // Analytics (el que te sugiere Firebase)
+    implementation("com.google.firebase:firebase-analytics")
+
+    // Firebase Auth (Obligatorio para que funcione tu login)
+    implementation("com.google.firebase:firebase-auth")
+
+    // Librerías modernas de Android para el inicio de sesión con cuenta de Google
+    implementation("androidx.credentials:credentials:1.2.1")
+    implementation("androidx.credentials:credentials-play-services-auth:1.2.1")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
+
 }

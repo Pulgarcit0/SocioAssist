@@ -46,7 +46,7 @@ class OcrCaptureManager(
     private var isProcessing = false
     private var ultimaCapturaTime = 0L
     private var tiempoInicioProcesamiento = 0L
-    private val TAG = "MotoAssist_OCR"
+    private val TAG = "SocioAssist_OCR"
 
     fun iniciarCaptura(resultCode: Int, dataIntent: Intent) {
         val projectionManager = context.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
@@ -119,7 +119,7 @@ class OcrCaptureManager(
                         val textoCrudo = visionText.text
 
                         
-                        Log.d("MotoAssist_Debug", "Texto capturado por OCR:\n=================\n$textoCrudo\n=================")
+                        Log.d("SocioAssist_Debug", "Texto capturado por OCR:\n=================\n$textoCrudo\n=================")
 
                         val plataformaActiva = PlataformaManager.obtenerPlataformaActiva(context)
                         val isUberMode = (plataformaActiva == "Uber")

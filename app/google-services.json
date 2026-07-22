@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "670654947146",
+    "project_id": "socioassist-a9382",
+    "storage_bucket": "socioassist-a9382.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:670654947146:android:bcf643ba1b54aa9470abb3",
+        "android_client_info": {
+          "package_name": "com.valentin.socioassist"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "670654947146-jblr0ob3g5cavmbgotkrjhgijer2a8ub.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.valentin.socioassist",
+            "certificate_hash": "8a3b69b26105b2f9f4bee13d9c506690fbf77d52"
+          }
+        },
+        {
+          "client_id": "670654947146-36ebjq7qhhgncqi09jeun28mrgqtdnlp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBTMz42TJLfSTd0jHEBwR9evYgdxuvrN2M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "670654947146-36ebjq7qhhgncqi09jeun28mrgqtdnlp.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

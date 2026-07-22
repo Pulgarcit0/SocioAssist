@@ -49,9 +49,9 @@ class FloatingService : LifecycleService() {
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private val resetRunnable = Runnable { currentTripState.value = null }
-    private val TAG = "MotoAssist_Service"
+    private val TAG = "SocioAssist_Service"
 
-    
+
     private var sleepJob: Job? = null
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -143,7 +143,7 @@ class FloatingService : LifecycleService() {
                     },
                     onClose = {
                         currentTripState.value = null
-                        sleepJob?.cancel() 
+                        sleepJob?.cancel()
                         sleepJob = CoroutineScope(Dispatchers.Main).launch {
                             ocrManager.isScannerPaused = true
                             delay(3000.milliseconds)
@@ -167,7 +167,7 @@ class FloatingService : LifecycleService() {
         Log.e(TAG, "🔴 SERVICIO DESTRUIDO")
         isRunning = false
         super.onDestroy()
-        sleepJob?.cancel() 
+        sleepJob?.cancel()
 
         try { unregisterReceiver(internalWakeUpReceiver) } catch (e: Exception) {}
         try { unregisterReceiver(systemScreenReceiver) } catch (e: Exception) {}
@@ -184,7 +184,7 @@ class FloatingService : LifecycleService() {
                 Log.d(TAG, "⏰ Despertador recibido. Reactivando...")
                 ocrManager.isScannerPaused = false
 
-                
+
                 sleepJob?.cancel()
                 sleepJob = CoroutineScope(Dispatchers.Main).launch {
                     delay(15000.milliseconds)
@@ -201,13 +201,13 @@ class FloatingService : LifecycleService() {
                 Intent.ACTION_SCREEN_OFF -> {
                     Log.d(TAG, "📱 Pantalla apagada. Pausando OCR INMEDIATAMENTE.")
                     ocrManager.isScannerPaused = true
-                    sleepJob?.cancel() 
+                    sleepJob?.cancel()
                 }
                 Intent.ACTION_SCREEN_ON, Intent.ACTION_USER_PRESENT -> {
                     Log.d(TAG, "📱 Pantalla encendida. Despertando OCR...")
                     ocrManager.isScannerPaused = false
 
-                    
+
                     sleepJob?.cancel()
                     sleepJob = CoroutineScope(Dispatchers.Main).launch {
                         delay(15000.milliseconds)

@@ -1,5 +1,6 @@
 package com.valentin.socioassist.ui.screens
 
+import android.content.Context
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -23,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.valentin.socioassist.feature.asistente.PlataformaManager
 
-
+// Paleta de colores local
 val BackgroundColor = Color(0xFFF8F9FF)
 val OnSurfaceColor = Color(0xFF0B1C30)
 val OnSurfaceVariantColor = Color(0xFF424754)
@@ -49,7 +50,7 @@ fun SwitchScreen(
             .padding(horizontal = 24.dp, vertical = 32.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        
+        // Título de la sección
         Text(
             text = "Plataformas de Viaje",
             fontSize = 30.sp,
@@ -65,91 +66,82 @@ fun SwitchScreen(
         )
         Spacer(modifier = Modifier.height(32.dp))
 
-        
+        // Lista de plataformas
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-
-            
             PlataformaCardHtml(
                 nombre = "Didi Moto/Auto",
                 icono = Icons.Default.DirectionsCar,
-                colorTema = Color(0xFFFF7D00), 
+                colorTema = Color(0xFFFF7D00),
                 isActivo = (plataformaActiva == "Didi Moto/Auto" && isServiceRunning),
                 onCheckedChange = { activo ->
                     manejarCambioPlataforma(activo, "Didi Moto/Auto", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
                 }
             )
 
-            
             PlataformaCardHtml(
                 nombre = "Uber Moto/Auto",
                 icono = Icons.Default.LocalTaxi,
-                colorTema = Color(0xFF000000), 
+                colorTema = Color(0xFF000000),
                 isActivo = (plataformaActiva == "Uber Moto/Auto" && isServiceRunning),
                 onCheckedChange = { activo ->
                     manejarCambioPlataforma(activo, "Uber Moto/Auto", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
                 }
             )
 
-            
             PlataformaCardHtml(
                 nombre = "inDrive",
-                icono = Icons.Default.ElectricRickshaw, 
-                colorTema = Color(0xFF00D166), 
+                icono = Icons.Default.ElectricRickshaw,
+                colorTema = Color(0xFF00D166),
                 isActivo = (plataformaActiva == "inDrive" && isServiceRunning),
                 onCheckedChange = { activo ->
                     manejarCambioPlataforma(activo, "inDrive", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
                 }
             )
 
-            
             PlataformaCardHtml(
                 nombre = "Didi Food",
-                icono = Icons.Default.Restaurant, 
-                colorTema = Color(0xFFFF7D00), 
+                icono = Icons.Default.Restaurant,
+                colorTema = Color(0xFFFF7D00),
                 isActivo = (plataformaActiva == "Didi Food" && isServiceRunning),
                 onCheckedChange = { activo ->
                     manejarCambioPlataforma(activo, "Didi Food", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
                 }
             )
 
-            
             PlataformaCardHtml(
                 nombre = "Uber Eats",
-                icono = Icons.Default.DeliveryDining, 
-                colorTema = Color(0xFF06C167), 
+                icono = Icons.Default.DeliveryDining,
+                colorTema = Color(0xFF06C167),
                 isActivo = (plataformaActiva == "Uber Eats" && isServiceRunning),
                 onCheckedChange = { activo ->
                     manejarCambioPlataforma(activo, "Uber Eats", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
                 }
             )
 
-            
             PlataformaCardHtml(
                 nombre = "Rappi",
-                icono = Icons.Default.TwoWheeler, 
-                colorTema = Color(0xFFFF441F), 
+                icono = Icons.Default.TwoWheeler,
+                colorTema = Color(0xFFFF441F),
                 isActivo = (plataformaActiva == "Rappi" && isServiceRunning),
                 onCheckedChange = { activo ->
                     manejarCambioPlataforma(activo, "Rappi", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
                 }
             )
 
-            
             PlataformaCardHtml(
                 nombre = "Cabify",
                 icono = Icons.Default.AirportShuttle,
-                colorTema = Color(0xFF7145D6), 
+                colorTema = Color(0xFF7145D6),
                 isActivo = (plataformaActiva == "Cabify" && isServiceRunning),
                 onCheckedChange = { activo ->
                     manejarCambioPlataforma(activo, "Cabify", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
                 }
             )
 
-            
             PlataformaCardHtml(
                 nombre = "Lalamove",
-                icono = Icons.Default.LocalShipping, 
-                colorTema = Color(0xFFF15A24), 
+                icono = Icons.Default.LocalShipping,
+                colorTema = Color(0xFFF15A24),
                 isActivo = (plataformaActiva == "Lalamove" && isServiceRunning),
                 onCheckedChange = { activo ->
                     manejarCambioPlataforma(activo, "Lalamove", context, onSolicitarPermiso, onSetServiceRunning) { plataformaActiva = it }
@@ -159,18 +151,17 @@ fun SwitchScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        
+        // Banner informativo
         BannerProximamenteHtml()
 
         Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
-
 private fun manejarCambioPlataforma(
     activo: Boolean,
     nombrePlataforma: String,
-    context: android.content.Context,
+    context: Context,
     onSolicitarPermiso: () -> Unit,
     onSetServiceRunning: (Boolean) -> Unit,
     setPlataformaActiva: (String) -> Unit
@@ -209,7 +200,6 @@ fun PlataformaCardHtml(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                
                 Box(
                     modifier = Modifier
                         .size(48.dp)
@@ -225,7 +215,6 @@ fun PlataformaCardHtml(
                     )
                 }
 
-                
                 Switch(
                     checked = isActivo,
                     onCheckedChange = onCheckedChange,

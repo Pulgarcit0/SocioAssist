@@ -7,9 +7,9 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
 
-class MotoAssistNotificationListener : NotificationListenerService() {
+class SocioAssistNotificationListener : NotificationListenerService() {
 
-    private val TAG = "MotoAssist_Listener"
+    private val TAG = "SocioAssist_Listener"
 
     override fun onListenerConnected() {
         super.onListenerConnected()
@@ -45,7 +45,7 @@ class MotoAssistNotificationListener : NotificationListenerService() {
             val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
             val wakeLock = powerManager.newWakeLock(
                 PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP,
-                "MotoAssist::AlertaViajeWakeLock"
+                "SocioAssist::AlertaViajeWakeLock"
             )
 
             

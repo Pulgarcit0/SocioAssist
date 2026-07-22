@@ -11,6 +11,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
@@ -43,8 +44,8 @@
 
         <!-- Servicio para escuchar las notificaciones de Uber/DiDi -->
         <service
-            android:name=".core.MotoAssistNotificationListener"
-            android:label="MotoAssist Despertador"
+            android:name=".core.SocioAssistNotificationListener"
+            android:label="SocioAssist Despertador"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
             android:exported="true">
             <intent-filter>

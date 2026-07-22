@@ -1,7 +1,6 @@
 package com.valentin.socioassist.ui.screens
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -10,8 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.HelpOutline
-import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.*
@@ -22,12 +20,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.rememberAsyncImagePainter
-
+import coil.compose.AsyncImage
+import com.google.firebase.auth.FirebaseAuth
 
 val CardBackgroundColor = Color.White
 val LightBlueCardColor = Color(0xFFF1F5F9)
@@ -36,42 +35,56 @@ val TextRedColor = Color(0xFFE02424)
 @Composable
 fun SettingsScreen(
     isLoggedIn: Boolean = false,
-    userData: UserProfile? = null,
-    onLogoutClick: () -> Unit
+    onLogoutClick: () -> Unit,
+    onManageSubscriptionClick: () -> Unit
 ) {
-    val nombresAleatorios = listOf("Valentín", "Alejandro", "Carlos", "Miguel", "Luis")
-    val nombreMostrado = remember(isLoggedIn) {
-        if (isLoggedIn && userData != null) userData.name else nombresAleatorios.random()
+    // 1. ESTADOS PARA GUARDAR LA INFORMACIÓN DE GOOGLE
+    var userName by remember { mutableStateOf("Cargando perfil...") }
+    var userPhotoUrl by remember { mutableStateOf<String?>(null) }
+    var calificacionMostrada by remember { mutableStateOf("4.95") }
+
+    // 2. EFECTO PARA EXTRAER LOS DATOS AL ABRIR LA PANTALLA
+    LaunchedEffect(Unit) {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (currentUser != null) {
+            userName = currentUser.displayName ?: "Socio"
+            userPhotoUrl = currentUser.photoUrl?.toString()
+        } else {
+            userName = "Socio"
+        }
     }
-    val calificacionMostrada = if (isLoggedIn && userData != null) userData.rating else "4.95"
-    val imagenPerfil = if (isLoggedIn && userData != null) userData.photoUrl else "https://via.placeholder.com/150"
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundColor) 
+            .background(BackgroundColor)
             .padding(horizontal = 24.dp)
             .verticalScroll(rememberScrollState())
     ) {
         Spacer(modifier = Modifier.height(24.dp))
 
-        
+        // --- SECCIÓN DE PERFIL ---
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Image(
-                painter = rememberAsyncImagePainter(imagenPerfil),
+            // Foto de perfil usando Coil de forma segura
+            AsyncImage(
+                model = userPhotoUrl,
                 contentDescription = "Foto de perfil",
-                contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(64.dp)
                     .clip(CircleShape)
-                    .background(Color.LightGray)
+                    .background(Color.LightGray),
+                contentScale = ContentScale.Crop,
+                // SOLUCIÓN AL CRASH 1: Usar un icono de Compose en lugar del de Android
+                fallback = rememberVectorPainter(Icons.Default.AccountCircle),
+                error = rememberVectorPainter(Icons.Default.AccountCircle)
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column {
                 Text(
-                    text = nombreMostrado,
+                    text = userName,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = OnSurfaceColor
@@ -102,7 +115,7 @@ fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        
+        // --- TARJETA SUSCRIPCIÓN ---
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -135,7 +148,7 @@ fun SettingsScreen(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
-                    onClick = { /* TODO: Ir a suscripción */ },
+                    onClick = onManageSubscriptionClick,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
@@ -147,7 +160,7 @@ fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        
+        // --- TARJETA RECOMENDAR ---
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -207,7 +220,7 @@ fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        
+        // --- AJUSTES ---
         SettingsSection(
             items = listOf(
                 SettingsItem("Notificaciones", Icons.Outlined.Notifications),
@@ -218,19 +231,22 @@ fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        
         SettingsSection(
             items = listOf(
-                SettingsItem("Centro de Ayuda", Icons.AutoMirrored.Outlined.HelpOutline),
+                // SOLUCIÓN AL CRASH 2: Quitamos los AutoMirrored que causan conflictos
+                SettingsItem("Centro de Ayuda", Icons.Outlined.HelpOutline),
                 SettingsItem("Términos y Condiciones", Icons.Outlined.Description)
             )
         )
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        
+        // --- CERRAR SESIÓN ---
         OutlinedButton(
-            onClick = onLogoutClick,
+            onClick = {
+                FirebaseAuth.getInstance().signOut()
+                onLogoutClick()
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
@@ -239,7 +255,8 @@ fun SettingsScreen(
             colors = ButtonDefaults.outlinedButtonColors(contentColor = TextRedColor)
         ) {
             Icon(
-                imageVector = Icons.AutoMirrored.Outlined.Logout,
+                // SOLUCIÓN AL CRASH 2: Quitamos el AutoMirrored del Logout
+                imageVector = Icons.Outlined.Logout,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp)
             )
@@ -250,12 +267,6 @@ fun SettingsScreen(
         Spacer(modifier = Modifier.height(40.dp))
     }
 }
-
-data class UserProfile(
-    val name: String,
-    val rating: String,
-    val photoUrl: String
-)
 
 data class SettingsItem(
     val title: String,
@@ -302,7 +313,6 @@ fun SettingsSection(items: List<SettingsItem>) {
                     )
                 }
 
-                
                 if (index < items.size - 1) {
                     HorizontalDivider(
                         modifier = Modifier.padding(horizontal = 20.dp),
